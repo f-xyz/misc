@@ -4,7 +4,7 @@ f_context = require('f_context')
 _ = require('lodash')
 
 config =
-  wordsTotal : 16 # kobzar
+  wordsTotal : 10 # kobzar
 #  wordsTotal : 10 # bose
   lineTotal : 4
   scheme: [
@@ -121,25 +121,15 @@ builder = (data) ->
         word = pickRandom _.keys data
         line.push upperFirst word
       else
-        word = pickByFrequency data[word]
+        word = pickRandom _.keys data[word]
         line.push word
 
       history.push word
 
-      break if shouldNewLine()
+      break if shouldNewLine() || shouldEnd()
 
   shouldNewLine = () -> line.length >= config.lineTotal
   shouldEnd = () -> history.length >= config.wordsTotal
-
-  pickByFrequency = (words) ->
-    if line.length == config.lineTotal - 1
-      keys = _.keys data
-      keys = _.sortBy keys, (x) -> fitness x, word
-      console.log fitness keys[0], word
-      keys[0]
-    else
-      keys = _.keys words
-      keys[randomInt(keys.length)]
 
   compile = () ->
     loop
@@ -151,9 +141,11 @@ builder = (data) ->
   build = () ->
     history = []
     lines = []
+
     compile()
-    # build here
-    lines
+
+    lines = _.map lines, (x) -> x.join(' ')
+    lines.join('\n') + '.'
 
   return {
     build
