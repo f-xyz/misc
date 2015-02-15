@@ -4,8 +4,8 @@ f_context = require('f_context')
 _ = require('lodash')
 
 config =
-#  wordsTotal : 16 # kobzar
-  wordsTotal : 10 # bose
+  wordsTotal : 16 # kobzar
+#  wordsTotal : 10 # bose
   lineTotal : 4
   scheme: [
     [3, 5],
@@ -76,7 +76,7 @@ buildChain = (chain, freqData, i, prevWord) ->
   if words.length == 0
     words = _.keys chain
 
-  rndWord = pick words, prevWord
+  rndWord = pickRandom words, prevWord
 
   s = ''
 
@@ -94,11 +94,10 @@ buildChain = (chain, freqData, i, prevWord) ->
 
 #######################################
 
-pick = (words) ->
+pickRandom = (words) ->
   # y = N - x
 #  words = _.sortBy words, (x) -> fitness x, prevWord
   words[ randomInt(words.length) ]
-
 
 isEnd = (i) ->
   i >= config.wordsTotal
@@ -112,34 +111,53 @@ builder = (data) ->
   history = []
   lines = []
   line = []
+  word = null
 
-  compile = (freqData) ->
-    if isEnd history.length then return '.'
+  compileLine = () ->
 
-    words = []
+    loop
 
-    if freqData
-      words = _.keys freqData
+      if !word
+        word = pickRandom _.keys data
+        line.push upperFirst word
+      else
+        word = pickByFrequency data[word]
+        line.push word
 
-    if words.length == 0
-      words = _.keys chain
+      history.push word
 
-    rndWord = pick words
+      break if shouldNewLine()
 
-    history.push rndWord
+  shouldNewLine = () -> line.length >= config.lineTotal
+  shouldEnd = () -> history.length >= config.wordsTotal
 
-    if history.length == 0
-      line.push upperFirst rndWord
+  pickByFrequency = (words) ->
+    if line.length == config.lineTotal - 1
+      keys = _.keys data
+      keys = _.sortBy keys, (x) -> fitness x, word
+      console.log fitness keys[0], word
+      keys[0]
     else
-      line.push
+      keys = _.keys words
+      keys[randomInt(keys.length)]
+
+  compile = () ->
+    loop
+      line = []
+      compileLine()
+      lines.push line
+      break if shouldEnd()
 
   build = () ->
     history = []
     lines = []
     compile()
     # build here
+    lines
 
-  return { build }
+  return {
+    build
+  }
 
 #######################################
 
