@@ -1,5 +1,5 @@
 should = require('chai').should()
-m = require('../m')
+m = require('../haikugen/m')
 
 describe 'words', ->
     it 'should split words and skip everything else', ->
