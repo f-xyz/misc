@@ -4,15 +4,9 @@ f_context = require('f_context')
 _ = require('lodash')
 
 config =
-  wordsTotal : 10 # kobzar
+  wordsTotal : 16 # kobzar
 #  wordsTotal : 10 # bose
   lineTotal : 4
-  scheme: [
-    [3, 5],
-    [3, 5],
-    [1, 4]
-  ],
-  rhythm: [2]
 
 reverse = (x) -> x.split('').reverse().join('')
 upperFirst = (s) -> s[0].toUpperCase() + s.slice(1)
@@ -20,6 +14,9 @@ randomInt = (max) -> Math.floor max*Math.random()
 
 #######################################
 
+# улучшить токенайзер:
+#  перевести на конечный автомат
+#  токенизировать знаки препинания и переносы строк как слова
 tokenize = (str) ->
   str
     .split /[^a-zа-яёъєїі\-',]/i
@@ -63,80 +60,64 @@ fitness = (x, y) ->
 
 #######################################
 
-build = (chain) -> buildChain chain, [], 0, ''
-
-buildChain = (chain, freqData, i, prevWord) ->
-  if isEnd i then return '.'
-
-  words = []
-
-  if freqData
-    words = _.keys freqData
-
-  if words.length == 0
-    words = _.keys chain
-
-  rndWord = pickRandom words, prevWord
-
-  s = ''
-
-  if isNewLine i
-    s += '\n'
-
-  if i == 0 then s += upperFirst rndWord
-  else s += rndWord
-
-  s += ' '
-
-  s += buildChain chain, chain[rndWord], ++i, rndWord
-
-  return s
-
-#######################################
-
-pickRandom = (words) ->
-  # y = N - x
-#  words = _.sortBy words, (x) -> fitness x, prevWord
-  words[ randomInt(words.length) ]
-
-isEnd = (i) ->
-  i >= config.wordsTotal
-
-isNewLine = (i) ->
-  i > 0 && i % config.lineTotal == 0
-
-#######################################
-
 builder = (data) ->
   history = []
   lines = []
   line = []
   word = null
+  allWords = _.keys data
 
   compileLine = () ->
 
     loop
 
       if !word
-        word = pickRandom _.keys data
+
+        word = pickRandomFrom allWords
         line.push upperFirst word
+
       else
-        word = pickRandom _.keys data[word]
+
+        if lines.length > 0 && (
+          isEnoughForLine(line.length + 1) ||
+          isEnoughForHaiku(history.length + 1))
+
+          prevLine = lines[0]
+          rhymeWord = prevLine[prevLine.length - 1]
+          word = pickRhymedFrom allWords, rhymeWord
+
+        else
+          word = pickRandomFrom _.keys data[word]
+
         line.push word
 
       history.push word
 
-      break if shouldNewLine() || shouldEnd()
+      break if isEnoughForLine(line.length) ||
+               isEnoughForHaiku(history.length)
 
-  shouldNewLine = () -> line.length >= config.lineTotal
-  shouldEnd = () -> history.length >= config.wordsTotal
+  isEnoughForLine = (wordInLine) -> wordInLine >= config.lineTotal
+  isEnoughForHaiku = (totalWords) -> totalWords >= config.wordsTotal
+
+  pickRandomFrom = (words) -> words[ randomInt(words.length) ]
+  pickRhymedFrom = (words, rhymeWord) ->
+
+#    words = _.filter words, (x) -> fitness(x, word) > 0
+    words = _.sortBy words, (x) -> -fitness x, word
+    words = _.unique words
+
+    console.log words.slice(1, 6)
+
+    word = pickRandomFrom words.slice(0, 10) || ['lol']
+    word += '->' +  fitness(word, rhymeWord)
+    word
 
   compile = () ->
     loop
       line = []
       compileLine()
       lines.push line
-      break if shouldEnd()
+      break if isEnoughForHaiku(history.length)
 
   build = () ->
     history = []
@@ -144,8 +125,9 @@ builder = (data) ->
 
     compile()
 
-    lines = _.map lines, (x) -> x.join(' ')
-    lines.join('\n') + '.'
+    lines
+    lines = lines.map (x) -> x.join(' ')
+    postProcess lines.join('\n') + '.'
 
   return {
     build
@@ -154,16 +136,13 @@ builder = (data) ->
 #######################################
 
 postProcess = (s) ->
-  s
-    .replace /\s([,.])/, '$1'
-    .replace /\s?([,.\-]){2,}/, '$1'
+  s.replace /\s?([,.\-]){2,}/, '$1'
 
 #######################################
 
 module.exports = {
   tokenize,
   analyze,
-  build,
   postProcess,
   fitness,
   builder

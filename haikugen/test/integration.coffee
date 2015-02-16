@@ -16,22 +16,22 @@ describe '', ->
       words = bose.tokenize content
       data = bose.analyze words
 
-      ##
+      # rhyme finder - make in engine.coffee
 
-      word = words[~~(Math.random()*words.length)]
+#      word = words[~~(Math.random()*words.length)]
+#
+#      words = _.filter words, (x) -> bose.fitness(x, word) > 0
+#      words = _.sortBy words, (x) -> -bose.fitness x, word
+#      words = _.unique words
+#
+#      console.log word
+#      words.slice(1, 6).forEach (x) ->
+#        console.log '  ', x, bose.fitness(x, word)
+#
+#      return
 
-      words = _.filter words, (x) -> bose.fitness(x, word) > 0
-      words = _.sortBy words, (x) -> -bose.fitness x, word
-      words = _.unique words
-
-      console.log word
-      words.slice(1, 6).forEach (x) ->
-        console.log '  ', x, bose.fitness(x, word)
-
-      return
 
       for i in [0...5]
         console.log '# ' + i
-#        console.log bose.postProcess bose.build data
         console.log bose.builder(data).build()
         console.log '\n'
