@@ -1,0 +1,7 @@
+Haiku Generator v.{{ version }}
+
+Usage: 
+    hg -i file.txt -n 3
+
+Options:
+    -i, --input <file>\t
