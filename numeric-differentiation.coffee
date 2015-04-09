@@ -1,15 +1,14 @@
 should = require('chai').should()
-sqrt = Math.sqrt
-sqr = (x) -> x*x
-dist = (pa, pb) -> 
-    sqrt (
-        sqr pa[0] - pb[0] + 
-        sqr pa[1] - pb[1] + 
-        sqr pa[2] - pb[2] 
-    )
 
 e = 1e-6
-
+sqrt = Math.sqrt
+sqr = (x) -> x*x
+dist = (pa, pb) ->
+    sqrt (
+        sqr pa[0] - pb[0] +
+        sqr pa[1] - pb[1] +
+        sqr pa[2] - pb[2]
+    )
 grad3d = (f, x, y, z) -> [
     ( f(x + e, y, z) - f(x - e, y, z) ) / e / 2,
     ( f(x, y + e, z) - f(x, y - e, z) ) / e / 2,
